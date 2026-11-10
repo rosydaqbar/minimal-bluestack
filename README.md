@@ -11,13 +11,13 @@
 [![Forks](https://img.shields.io/github/forks/rosydaqbar/minimal-bluestack?style=flat-square&logo=github)](https://github.com/rosydaqbar/minimal-bluestack/forks)
 [![Last commit](https://img.shields.io/github/last-commit/rosydaqbar/minimal-bluestack?style=flat-square)](https://github.com/rosydaqbar/minimal-bluestack/commits/main/)
 
-Give each Android game its own desktop window. A Windows app built with **Rust + GPUI** that manages your existing BlueStacks installation.
+Pop out Android games into their own desktop windows. Built with **Rust + GPUI** for your existing BlueStacks installation.
 
 ## ✨ Features
 
-- Run two games side by side in **one Android instance**.
+- Pop out games into separate, movable and resizable desktop windows.
 - Launch each game from its own desktop shortcut, with its original icon.
-- Keep the emulator interface in the background.
+- Share **one Android instance** across game windows, with the emulator interface in the background.
 - List optional bloatware, clean selected items, and undo changes.
 - Stop Android automatically after the last game window closes.
 
@@ -54,7 +54,7 @@ Cleanup statuses: **✓ Cleared** · **– Pending** · **× Protected / Failed*
 
 ## 📌 Limits
 
-- Two game windows, each rendered at **540 × 960**. Mouse taps/drags and **Esc** for Back; keyboard mapping and multi-touch are not implemented.
+- Up to two pop-out windows at once, each rendered at **540 × 960**. Mouse taps/drags and **Esc** for Back; keyboard mapping and multi-touch are not implemented.
 - Frames use GPU readback and Windows GDI; FPS depends on the game and hardware.
 - Cleanup preserves Google services and sign-in. It does not remove ads inside games or every BlueStacks screen.
 
