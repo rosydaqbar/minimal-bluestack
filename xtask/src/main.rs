@@ -147,7 +147,8 @@ fn main() -> Result<()> {
             fs::write(path, empty)?;
         }
     }
-    for file in ["README.md", "LICENSE", "THIRD_PARTY.md"] {
+    fs::create_dir_all(dist.join("docs"))?;
+    for file in ["README.md", "LICENSE", "THIRD_PARTY.md", "docs/REFERENCE.md"] {
         fs::copy(root.join(file), dist.join(file))?;
     }
     for file in [
