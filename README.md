@@ -18,8 +18,9 @@ Pop out Android games into their own desktop windows. Built with **Rust + GPUI**
 - Pop out games into separate, movable and resizable desktop windows.
 - Launch each game from its own desktop shortcut, with its original icon.
 - Share **one Android instance** across game windows, with the emulator interface in the background.
+- Open the standard BlueStacks window when needed, then hide it again.
 - List optional bloatware, clean selected items, and undo changes.
-- Stop Android automatically after the last game window closes.
+- Stop Android after the last game closes while the launcher is hidden.
 
 ## 🧩 Compatibility
 
@@ -49,6 +50,8 @@ Open **`dist/MinimalBlueStack.exe`**. Keep the entire `dist` folder together in 
 3. Choose **Connect Android** to scan installed apps.
 4. Select a game → **Open window** or **Create shortcut**.
 5. Choose **Load bloatware** → review the list → **Clean**. Use **Undo** to restore recorded changes.
+
+Use **Open BlueStacks** to access the normal emulator window, or **Hide BlueStacks** to return it to the background. Android stays running while that window is open.
 
 Cleanup statuses: **✓ Cleared** · **– Pending** · **× Protected / Failed**, with a reason for each item. Some ad components require working Android root access.
 

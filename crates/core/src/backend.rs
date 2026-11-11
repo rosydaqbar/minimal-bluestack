@@ -16,6 +16,8 @@ pub struct HostStatus {
     pub ready: bool,
     pub problem: Option<String>,
     pub running: bool,
+    #[serde(rename = "launcherVisible")]
+    pub launcher_visible: bool,
     #[serde(rename = "playerPid")]
     pub player_pid: u32,
     #[serde(rename = "maxWindows")]
@@ -75,6 +77,8 @@ pub struct BloatwareItem {
 pub enum Job {
     Scan,
     Connect,
+    OpenLauncher,
+    HideLauncher,
     Stop,
     Register(AndroidApp),
     Launch(AndroidApp),

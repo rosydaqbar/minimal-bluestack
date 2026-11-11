@@ -687,6 +687,28 @@ impl Render for Toolbox {
             !self.busy && running,
             |this, _, cx| this.run(Job::Stop, cx),
         );
+        let launcher_visible = self.snapshot.status.launcher_visible;
+        let launcher = self.button(
+            cx,
+            "open-bluestacks",
+            if launcher_visible {
+                "Hide BlueStacks"
+            } else {
+                "Open BlueStacks"
+            },
+            false,
+            !self.busy && self.snapshot.status.installed,
+            move |this, _, cx| {
+                this.run(
+                    if launcher_visible {
+                        Job::HideLauncher
+                    } else {
+                        Job::OpenLauncher
+                    },
+                    cx,
+                )
+            },
+        );
         let setup = self.button(
             cx,
             "setup",
@@ -826,7 +848,7 @@ impl Render for Toolbox {
             .child(div().flex_1().min_w(px(0.)).flex().flex_col()
                 .child(div().px_7().py_5().border_b_1().border_color(rgb(LINE)).flex().justify_between().items_center()
                     .child(div().child(div().text_size(px(24.)).font_weight(FontWeight::SEMIBOLD).child("Android workspace")).child(div().mt_1().text_size(px(11.)).text_color(rgb(MUTED)).child(format!("BlueStacks {} · {}",self.snapshot.status.version,if ready{"Core ready"}else{"Core needs attention"}))))
-                    .child(div().flex().gap_2().child(scan).child(connect).child(stop)))
+                    .child(div().flex().gap_2().child(scan).child(connect).child(launcher).child(stop)))
                 .child(installation_row)
                 .when(!ready,|d|d.child(div().px_7().py_3().bg(rgb(0x332a1d)).text_size(px(12.)).flex().gap_4().items_center()
                     .child(div().flex_1().child(self.snapshot.status.problem.clone().unwrap_or_else(||"Core setup is required. Setup enables local ADB and backs up BlueStacks files. Close all emulators first.".into()))).child(setup)))

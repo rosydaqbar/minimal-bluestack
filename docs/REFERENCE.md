@@ -59,8 +59,16 @@ description and embeds the icon. The interface and messages use English.
 5. Select an app, then **Create shortcut** or **Open window**. Each shortcut
    opens only its selected app. Scan again after installing a new game.
 
-Closing the manager preserves open game windows. The separate Rust watcher
-keeps their icons alive and stops the VM after the last game closes. Folder
+**Open BlueStacks** shows the existing emulator's main window, or starts the
+selected instance if it is offline. **Hide BlueStacks** returns it to transparent
+background mode. Opening the main window does not undo package cleanup or move
+games away from their pop-out displays. It can be opened before core setup;
+automatic idle shutdown requires a valid installed core.
+
+Closing the manager preserves open game windows and an explicitly opened
+BlueStacks main window. The separate Rust watcher keeps game icons alive and
+stops the VM after the last game closes when the main window is in background
+mode. Hiding the main window also stops an idle VM with a valid core. Folder
 changes are refused while an emulator is running. Invalid saved choices are
 reported rather than silently switching to a different installation.
 

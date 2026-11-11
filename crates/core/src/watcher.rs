@@ -27,7 +27,7 @@ impl CloseState {
         }
         self.open[slot] = visible;
     }
-    fn next(&self, now: u64, busy: bool) -> Option<(usize, bool)> {
+    fn next(&self, now: u64, busy: bool, launcher_open: bool) -> Option<(usize, bool)> {
         if busy {
             return None;
         }
@@ -35,10 +35,10 @@ impl CloseState {
         for slot in 0..2 {
             if self.pending[slot].is_some_and(|t| now.saturating_sub(t) >= 1000) && !self.sent[slot]
             {
-                if count == 0 && !self.last_sent {
+                if count == 0 && !launcher_open && !self.last_sent {
                     return Some((slot, true));
                 }
-                if count > 0 {
+                if count > 0 || launcher_open {
                     return Some((slot, false));
                 }
             }
@@ -188,7 +188,11 @@ pub fn watch(engine: &Engine, pid: u32) -> Result<()> {
                 &serde_json::json!({"pid":std::process::id(),"icons":applied.len()}),
             );
         }
-        if let Some((slot, last)) = state.next(now, platform::MutexGuard::busy(LOCK)) {
+        if let Some((slot, last)) = state.next(
+            now,
+            platform::MutexGuard::busy(LOCK),
+            platform::launcher_visible(pid, &engine.title),
+        ) {
             match engine.close(pid, if last { None } else { Some(slot) }, last) {
                 Ok(()) => state.commit(slot, last),
                 Err(error) => {
@@ -254,20 +258,30 @@ mod tests {
     #[test]
     fn close_lifecycle_and_reopen_race() {
         let mut s = CloseState::default();
-        assert_eq!(s.next(60000, false), None);
+        assert_eq!(s.next(60000, false, false), None);
         s.observe(0, true, 0);
         s.observe(1, true, 0);
         s.observe(0, false, 100);
-        assert_eq!(s.next(1099, false), None);
-        assert_eq!(s.next(1100, false), Some((0, false)));
+        assert_eq!(s.next(1099, false, false), None);
+        assert_eq!(s.next(1100, false, false), Some((0, false)));
         s.commit(0, false);
         s.observe(1, false, 1200);
-        assert_eq!(s.next(2200, true), None);
+        assert_eq!(s.next(2200, true, false), None);
         s.observe(1, true, 2300);
-        assert_eq!(s.next(3300, false), None);
+        assert_eq!(s.next(3300, false, false), None);
         s.observe(1, false, 3400);
-        assert_eq!(s.next(4400, false), Some((1, true)));
+        assert_eq!(s.next(4400, false, false), Some((1, true)));
         s.commit(1, true);
-        assert_eq!(s.next(5500, false), None);
+        assert_eq!(s.next(5500, false, false), None);
+    }
+    #[test]
+    fn closing_the_last_game_preserves_an_open_launcher() {
+        let mut state = CloseState::default();
+        state.observe(0, true, 0);
+        state.observe(0, false, 100);
+        assert_eq!(state.next(1100, false, true), Some((0, false)));
+        assert_eq!(state.next(1100, false, false), Some((0, true)));
+        state.commit(0, false);
+        assert_eq!(state.next(2200, false, true), None);
     }
 }

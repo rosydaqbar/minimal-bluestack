@@ -328,6 +328,7 @@ impl Engine {
             ready: result.is_ok(),
             problem: result.err().map(|e| format!("{e:#}")),
             running: pid != 0,
+            launcher_visible: platform::launcher_visible(pid, &self.title),
             player_pid: pid,
             max_windows: 2,
         }
@@ -424,6 +425,44 @@ impl Engine {
         self.validate()?;
         let _lock = platform::MutexGuard::lock(LOCK)?;
         self.boot_locked()
+    }
+    pub fn open_launcher(&self) -> Result<()> {
+        let _lock = platform::MutexGuard::lock(LOCK)?;
+        let player = self.installation.program_path.join("HD-Player.exe");
+        if !self.installation.found || !player.is_file() {
+            bail!("Select the BlueStacks installation folder first.");
+        }
+        let mut pid = platform::main_player(&self.title);
+        if pid == 0 {
+            pid = platform::spawn_player(&player)?;
+        }
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while Instant::now() < deadline {
+            if platform::set_launcher_visible(pid, &self.title, true)? {
+                if self.validate().is_ok() {
+                    self.ensure_watch(pid)?;
+                }
+                return Ok(());
+            }
+            if !platform::alive(pid) {
+                bail!("BlueStacks exited before its main window appeared.");
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        bail!("The BlueStacks main window has not appeared yet. Try Open BlueStacks again.")
+    }
+    pub fn hide_launcher(&self) -> Result<()> {
+        {
+            let _lock = platform::MutexGuard::lock(LOCK)?;
+            let pid = platform::main_player(&self.title);
+            if pid != 0 {
+                platform::set_launcher_visible(pid, &self.title, false)?;
+            }
+        }
+        if self.validate().is_ok() {
+            self.stop_idle()?;
+        }
+        Ok(())
     }
     fn boot_locked(&self) -> Result<u32> {
         let mut pid = platform::main_player(&self.title);
@@ -702,6 +741,9 @@ impl Engine {
     pub fn stop_idle(&self) -> Result<()> {
         let pid = platform::main_player(&self.title);
         if pid != 0 {
+            if platform::launcher_visible(pid, &self.title) {
+                return Ok(());
+            }
             self.close(pid, None, true)?;
         } else if !platform::player_running() {
             let _ = self.adb(&["kill-server"], 5);
@@ -714,6 +756,7 @@ impl Engine {
         if pid == 0 {
             return self.stop_idle();
         }
+        platform::set_launcher_visible(pid, &self.title, false)?;
         platform::request_game_close(pid);
         for _ in 0..50 {
             if !platform::slot_open(pid, None) {
@@ -737,7 +780,8 @@ impl Engine {
         if platform::slot_open(pid, slot) {
             return Ok(());
         }
-        if last && platform::slot_open(pid, None) {
+        if last && (platform::slot_open(pid, None) || platform::launcher_visible(pid, &self.title))
+        {
             last = false;
         }
         let mut session = self.session(pid);
@@ -990,7 +1034,16 @@ impl Backend {
                 engine.scan_live()?;
                 "Android connected. Installed apps and icons have been scanned.".into()
             }
+            Job::OpenLauncher => {
+                engine.open_launcher()?;
+                "BlueStacks opened. Use Hide BlueStacks to return it to the background.".into()
+            }
+            Job::HideLauncher => {
+                engine.hide_launcher()?;
+                "BlueStacks hidden. Open game windows keep running.".into()
+            }
             Job::Stop => {
+                engine.hide_launcher()?;
                 engine.stop_idle()?;
                 "Idle Android sessions stopped. Open games are still running.".into()
             }

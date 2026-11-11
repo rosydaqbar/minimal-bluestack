@@ -114,6 +114,8 @@ fn cli(backend: &Backend, args: &[String]) -> Option<anyhow::Result<()>> {
             }),
         "--scan-live" => engine.scan_live(),
         "--boot-check" => engine.boot().map(|_| ()),
+        "--open-bluestacks" => engine.open_launcher(),
+        "--hide-bluestacks" => engine.hide_launcher(),
         "--refresh-shortcuts" => engine.catalog().and_then(|catalog| {
             for game in catalog.games {
                 let app = backend::AndroidApp {

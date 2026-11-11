@@ -13,6 +13,7 @@ use windows_sys::Win32::{
     UI::WindowsAndMessaging::*,
 };
 const SYNCHRONIZE: u32 = 0x00100000;
+const LAUNCHER_VISIBLE: &str = "MinimalBlueStackLauncherVisible";
 pub fn wide(value: impl AsRef<OsStr>) -> Vec<u16> {
     value.as_ref().encode_wide().chain(Some(0)).collect()
 }
@@ -309,6 +310,7 @@ pub fn hide_main(pid: u32, title: &str) {
             if window.pid != pid
                 || window.title != title
                 || window.class == "BlueStacksNativeGameWindow"
+                || GetPropW(window.handle, wide(LAUNCHER_VISIBLE).as_ptr()) as usize != 0
             {
                 continue;
             }
@@ -338,6 +340,74 @@ pub fn hide_main(pid: u32, title: &str) {
             }
         }
     }
+}
+pub fn launcher_visible(pid: u32, title: &str) -> bool {
+    windows().iter().any(|window| {
+        window.pid == pid
+            && window.title == title
+            && window.class != "BlueStacksNativeGameWindow"
+            && window.open
+            && unsafe { !GetPropW(window.handle, wide(LAUNCHER_VISIBLE).as_ptr()).is_null() }
+    })
+}
+fn show_launcher_window(window: HWND, activate: bool) -> Result<()> {
+    unsafe {
+        if SetPropW(window, wide(LAUNCHER_VISIBLE).as_ptr(), 1usize as _) == 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        let style = GetWindowLongPtrW(window, GWL_EXSTYLE);
+        let foreground = (style
+            & !((WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE)
+                as isize))
+            | WS_EX_APPWINDOW as isize;
+        SetLastError(0);
+        SetWindowLongPtrW(window, GWL_EXSTYLE, foreground);
+        let error = GetLastError();
+        if error != 0 {
+            RemovePropW(window, wide(LAUNCHER_VISIBLE).as_ptr());
+            return Err(std::io::Error::from_raw_os_error(error as i32).into());
+        }
+        SetWindowPos(
+            window,
+            std::ptr::null_mut(),
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+        );
+        ShowWindowAsync(
+            window,
+            if activate {
+                SW_RESTORE
+            } else {
+                SW_SHOWNOACTIVATE
+            },
+        );
+        if activate {
+            SetForegroundWindow(window);
+        }
+        Ok(())
+    }
+}
+pub fn set_launcher_visible(pid: u32, title: &str, visible: bool) -> Result<bool> {
+    let mut found = false;
+    for window in windows().into_iter().filter(|window| {
+        window.pid == pid && window.title == title && window.class != "BlueStacksNativeGameWindow"
+    }) {
+        if visible {
+            show_launcher_window(window.handle, true)?;
+        } else {
+            unsafe {
+                RemovePropW(window.handle, wide(LAUNCHER_VISIBLE).as_ptr());
+            }
+        }
+        found = true;
+    }
+    if !visible {
+        hide_main(pid, title);
+    }
+    Ok(found)
 }
 pub fn show_game(pid: u32, slot: usize, name: &str) -> bool {
     unsafe {
@@ -632,6 +702,72 @@ mod taskbar_tests {
         System::Com::*,
         UI::Shell::{PropertiesSystem::*, *},
     };
+    #[test]
+    fn requested_launcher_survives_background_hiding_and_idle_cleanup() -> Result<()> {
+        let title = format!("Minimal launcher test {}", uuid::Uuid::new_v4());
+        let pid = std::process::id();
+        unsafe {
+            let window = CreateWindowExW(
+                WS_EX_APPWINDOW | WS_EX_ACCEPTFILES,
+                wide("STATIC").as_ptr(),
+                wide(&title).as_ptr(),
+                WS_POPUP,
+                -32000,
+                -32000,
+                1,
+                1,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null(),
+            );
+            assert!(!window.is_null());
+            let result = (|| -> Result<()> {
+                hide_main(pid, &title);
+                assert!(!launcher_visible(pid, &title));
+                assert_ne!(
+                    GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TRANSPARENT as isize,
+                    0
+                );
+                show_launcher_window(window, false)?;
+                ShowWindow(window, SW_SHOWNOACTIVATE);
+                assert!(launcher_visible(pid, &title));
+                for _ in 0..3 {
+                    hide_main(pid, &title);
+                }
+                let style = GetWindowLongPtrW(window, GWL_EXSTYLE);
+                assert_eq!(
+                    style
+                        & (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE)
+                            as isize,
+                    0
+                );
+                assert_ne!(style & WS_EX_APPWINDOW as isize, 0);
+                assert_ne!(style & WS_EX_ACCEPTFILES as isize, 0);
+                let engine = crate::engine::Engine {
+                    root: std::env::temp_dir(),
+                    installation: Default::default(),
+                    serial: String::new(),
+                    title: title.clone(),
+                };
+                engine.stop_idle()?;
+                assert!(launcher_visible(pid, &title));
+                set_launcher_visible(pid, &title, false)?;
+                assert!(!launcher_visible(pid, &title));
+                assert_ne!(
+                    GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TRANSPARENT as isize,
+                    0
+                );
+                assert!(
+                    engine.stop_idle().is_err(),
+                    "A hidden launcher must no longer bypass idle cleanup validation"
+                );
+                Ok(())
+            })();
+            DestroyWindow(window);
+            result
+        }
+    }
     #[test]
     fn windows_and_shortcuts_keep_their_own_game_identity() -> Result<()> {
         let root = std::env::temp_dir().join(format!("minimal-taskbar-{}", uuid::Uuid::new_v4()));
