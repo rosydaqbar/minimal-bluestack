@@ -1,4 +1,5 @@
 #![cfg(target_os = "android")]
+mod transport;
 use jni::{
     JNIEnv, JavaVM,
     objects::{GlobalRef, JClass, JObject, JObjectArray, JString, JValue},
@@ -507,8 +508,12 @@ fn broker(state: Arc<State>) {
                         .unwrap()
                         .0;
                 }
+                let idle = seen == *revision;
                 seen = *revision;
                 drop(revision);
+                if idle {
+                    transport::check_receiver(&socket)?;
+                }
                 for slot in 0..2 {
                     let result = env.with_local_frame(48, |env| -> Result<()> {
                         let image = state.slots.lock().unwrap()[slot].image.take();

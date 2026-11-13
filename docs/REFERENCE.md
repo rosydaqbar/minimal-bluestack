@@ -185,6 +185,10 @@ port 5038 and reads the device port from bluestacks.conf. Frame data uses the
 endpoints bind only to loopback. Content-addressed guest uploads prevent a
 rescan or second launch from overwriting code mapped by an active guest.
 
+When a display is idle, the guest checks for a disconnected frame receiver
+without consuming acknowledgement bytes. A dead connection is released even
+when no new images arrive, allowing the host's reconnect attempt to be accepted.
+
 The Qt root remains mapped and transparent because hiding it can stop the
 vendor renderer. A BlueStacks Windows service may remain after the VM/player
 stop. Games can impose their own secondary-display/background policies.
