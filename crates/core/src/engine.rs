@@ -465,6 +465,7 @@ impl Engine {
         Ok(())
     }
     fn boot_locked(&self) -> Result<u32> {
+        let boot_started = std::time::SystemTime::now();
         let mut pid = platform::main_player(&self.title);
         if pid == 0 {
             pid = platform::spawn_player(&self.installation.program_path.join("HD-Player.exe"))?;
@@ -472,6 +473,12 @@ impl Engine {
         self.ensure_watch(pid)?;
         let deadline = Instant::now() + Duration::from_secs(150);
         while Instant::now() < deadline {
+            if !platform::alive(pid) {
+                let log = self.installation.data_path.join("Engine/Tiramisu64/Logs/BstkCore.log");
+                let message = boot_failure(&log, boot_started).unwrap_or_else(||
+                    format!("BlueStacks exited before Android started. Check {}. If Hyper-V requires administrator access, reopen Minimal BlueStack with Run as administrator.", log.display()));
+                bail!("{message}");
+            }
             let found = platform::main_player(&self.title);
             if found != 0 {
                 pid = found;
@@ -860,6 +867,13 @@ impl Engine {
         Ok(())
     }
 }
+fn boot_failure(log: &Path, started: std::time::SystemTime) -> Option<String> {
+    if fs::metadata(log).ok()?.modified().ok()? < started { return None; }
+    let text = fs::read_to_string(log).ok()?;
+    if text.contains("WHvSetupPartition failed: E_ACCESSDENIED") {
+        Some("Windows denied access to the Hyper-V VM. Reopen Minimal BlueStack with Run as administrator and try again.".into())
+    } else { None }
+}
 fn loop_display(engine: &Engine, slot: usize) -> Result<u32> {
     let re = regex::Regex::new(&format!("NATIVE_DISPLAY_SLOT={slot} ID=(\\d+)"))?;
     for _ in 0..30 {
@@ -1168,6 +1182,20 @@ impl Backend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn boot_error_uses_only_a_current_hyperv_permission_failure() -> Result<()> {
+        let path = std::env::temp_dir().join(format!("minimal-boot-{}.log", uuid::Uuid::new_v4()));
+        let result = (|| -> Result<()> {
+            fs::write(&path, "Call to WHvSetupPartition failed: E_ACCESSDENIED (Last=0xc0000022/5)")?;
+            assert!(boot_failure(&path, std::time::UNIX_EPOCH).unwrap().contains("Run as administrator"));
+            assert!(boot_failure(&path, std::time::SystemTime::now() + Duration::from_secs(60)).is_none());
+            fs::write(&path, "Unrelated VM failure")?;
+            assert!(boot_failure(&path, std::time::UNIX_EPOCH).is_none());
+            Ok(())
+        })();
+        let _ = fs::remove_file(path);
+        result
+    }
     #[test]
     fn startup_transition_returns_only_the_misplaced_game_to_its_display() {
         let dump = "Display #0 (activities from top to bottom):\n * Task{x #50 type=standard A=10090:com.zjcs.android.sea U=0 visible=true}\nDisplay #3 (activities from top to bottom):\n * Task{y #51 type=standard A=10091:com.netmarble.skiagb U=0 visible=true}";

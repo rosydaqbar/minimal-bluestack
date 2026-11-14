@@ -74,6 +74,12 @@ reported rather than silently switching to a different installation.
 
 ## Cleanup and recovery
 
+If Windows denies VM startup with `WHvSetupPartition failed: E_ACCESSDENIED`,
+open Minimal BlueStack using **Run as administrator** and accept Windows UAC.
+The launcher reports this boot failure without waiting for the Android timeout.
+This does not require disabling Hyper-V. A working game session does not need
+to be restarted to change a shortcut's administrator launch option.
+
 The session watcher also keeps each running game's root task on its assigned
 display. Games that switch from an SDK startup activity to a new game activity
 can otherwise land on the hidden main Android screen. Placement is checked
