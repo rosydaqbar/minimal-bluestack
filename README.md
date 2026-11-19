@@ -32,6 +32,12 @@ Pop out Android games into their own desktop windows. Built with **Rust + GPUI**
 
 The native bridge requires this exact BlueStacks build. Install BlueStacks and create the Android instance separately.
 
+## 📦 Download
+
+[**Windows x64 · v0.1.0**](https://github.com/rosydaqbar/minimal-bluestack/releases/download/v0.1.0/minimal-bluestack-v0.1.0-windows-x64.zip)
+
+Extract the ZIP to a writable folder and open `MinimalBlueStack.exe`. Keep the included files together.
+
 ## 🛠️ Build
 
 Requires Rust stable/MSVC, Visual Studio Build Tools, Windows SDK, JDK 17+, and Android SDK/NDK with platform 33+ and D8. Set `ANDROID_HOME` or `ANDROID_SDK_ROOT` for a custom SDK path.
