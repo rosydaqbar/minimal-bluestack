@@ -311,18 +311,20 @@ impl Toolbox {
                             .justify_between()
                             .gap_3()
                             .child(Self::app_icon(app, 52.))
-                            .child(Self::tag(
-                                if !app.enabled {
-                                    "Disabled"
-                                } else if app.registered {
-                                    "Registered"
-                                } else if app.system {
-                                    "System app"
-                                } else {
-                                    "App"
-                                },
-                                if app.enabled { ACCENT } else { MUTED },
-                            )),
+                            .when(!app.enabled || app.registered || app.system, |row| {
+                                row.child(Self::tag(
+                                    if !app.enabled {
+                                        "Disabled"
+                                    } else if app.registered {
+                                        "Registered"
+                                    } else if app.system {
+                                        "System app"
+                                    } else {
+                                        "App"
+                                    },
+                                    if app.enabled { ACCENT } else { MUTED },
+                                ))
+                            }),
                     )
                     .child(
                         div()
@@ -332,25 +334,6 @@ impl Toolbox {
                             .w_full()
                             .whitespace_normal()
                             .child(app.name.clone()),
-                    )
-                    .child(
-                        div()
-                            .min_w(px(0.))
-                            .text_size(px(11.))
-                            .text_color(rgb(MUTED))
-                            .w_full()
-                            .whitespace_normal()
-                            .child(app.package.clone()),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(12.))
-                            .text_color(rgb(if selected { ACCENT } else { MUTED }))
-                            .child(if selected {
-                                "Selected · details on the right"
-                            } else {
-                                "Select to view actions"
-                            }),
                     )
                     .into_any_element(),
             );
@@ -452,11 +435,13 @@ impl Toolbox {
                         ))
                     }),
             );
-        let details = if let Some(app) = selected {
-            let shortcut = app.clone();
-            let launch = app.clone();
-            let allowed = !self.busy && !app.activity.is_empty() && app.enabled;
-            div()
+        let has_selection = selected.is_some();
+        let details =
+            if let Some(app) = selected {
+                let shortcut = app.clone();
+                let launch = app.clone();
+                let allowed = !self.busy && !app.activity.is_empty() && app.enabled;
+                div()
                     .id("app-details-scroll")
                     .overflow_y_scroll()
                     .w(px(276.))
@@ -466,74 +451,63 @@ impl Toolbox {
                     .rounded_lg()
                     .border_1()
                     .border_color(rgb(LINE))
-                    .child(div().flex().flex_col().gap_4()
-                    .child(div().text_size(px(12.)).text_color(rgb(MUTED)).child("Selected app"))
-                    .child(Self::app_icon(&app, 72.))
                     .child(
                         div()
-                            .text_size(px(23.))
-                            .font_weight(FontWeight::BOLD)
-                            .child(app.name.clone()),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(11.))
-                            .text_color(rgb(MUTED))
-                            .child(app.package.clone()),
-                    )
-                    .child(div().h(px(1.)).bg(rgb(LINE)))
-                    .when(!allowed || !self.snapshot.status.ready, |d| d.child(div().text_size(px(12.)).text_color(rgb(0xe8c987)).child(
+                            .flex()
+                            .flex_col()
+                            .gap_4()
+                            .child(Self::app_icon(&app, 72.))
+                            .child(
+                                div()
+                                    .text_size(px(23.))
+                                    .font_weight(FontWeight::BOLD)
+                                    .child(app.name.clone()),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(11.))
+                                    .text_color(rgb(MUTED))
+                                    .child(app.package.clone()),
+                            )
+                            .child(div().h(px(1.)).bg(rgb(LINE)))
+                            .when(!allowed || !self.snapshot.status.ready, |d| {
+                                d.child(div().text_size(px(12.)).text_color(rgb(0xe8c987)).child(
                         if !app.enabled { "This app is disabled in Android." }
                         else if app.activity.is_empty() { "This app has no launcher activity." }
-                        else { "Open Installation and install the core to use game windows." })))
-                    .child(self.button(
-                        cx,
-                        "make-shortcut",
-                        "Create shortcut",
-                        false,
-                        allowed,
-                        move |this, _, cx| this.run(Job::Register(shortcut.clone()), cx),
-                    ))
-                    .child(self.button(
-                        cx,
-                        "launch-game",
-                        "Open window",
-                        true,
-                        allowed && self.snapshot.status.ready,
-                        move |this, _, cx| this.run(Job::Launch(launch.clone()), cx),
-                    ))
-                    .child(div().text_size(px(12.)).text_color(rgb(MUTED)).child(
-                        "Desktop and window icons match the app. Each shortcut opens one game.",
-                    ))
-                    .child(
-                        div()
-                            .mt_4()
-                            .text_size(px(10.))
-                            .text_color(rgb(ACCENT))
-                            .child("Individual desktop window"),
+                        else { "Open Installation and install the core to use game windows." }))
+                            })
+                            .child(self.button(
+                                cx,
+                                "make-shortcut",
+                                "Create shortcut",
+                                false,
+                                allowed,
+                                move |this, _, cx| this.run(Job::Register(shortcut.clone()), cx),
+                            ))
+                            .child(self.button(
+                                cx,
+                                "launch-game",
+                                "Open window",
+                                true,
+                                allowed && self.snapshot.status.ready,
+                                move |this, _, cx| this.run(Job::Launch(launch.clone()), cx),
+                            )),
                     )
-                    .child(
-                        div()
-                            .text_size(px(12.))
-                            .text_color(rgb(MUTED))
-                            .child("Android stops after the last game closes while the BlueStacks launcher is hidden."),
-                    ))
-        } else {
-            div()
-                .w(px(276.))
-                .p_6()
-                .bg(rgb(PANEL))
-                .rounded_lg()
-                .text_color(rgb(MUTED))
-                .child("Select an app to view its details.")
-                .id("app-details-empty")
-        };
+            } else {
+                div()
+                    .w(px(276.))
+                    .p_6()
+                    .bg(rgb(PANEL))
+                    .rounded_lg()
+                    .text_color(rgb(MUTED))
+                    .id("app-details-empty")
+            };
         div()
             .flex()
             .gap_6()
             .size_full()
             .child(list)
-            .child(details)
+            .when(has_selection, |layout| layout.child(details))
             .into_any_element()
     }
     fn cleanup(&mut self, cx: &mut Context<Self>) -> AnyElement {
@@ -554,7 +528,6 @@ impl Toolbox {
             |this, _, cx| this.run(Job::Undo, cx),
         );
         let mut body=div().flex().flex_col().gap_5().child(div().text_size(px(28.)).font_weight(FontWeight::BOLD).child("Bloatware"))
-            .child(div().text_color(rgb(MUTED)).text_size(px(14.)).child("Load optional packages and ad components. Read each reason before cleanup. Undo restores recorded changes."))
             .child(div().flex().gap_3().child(load).child(undo))
             .child(div().p_5().bg(rgb(PANEL)).rounded_lg().border_1().border_color(rgb(LINE)).child("Game data, Play Store, Google sign-in, and WebView are preserved."));
         if let Some(plan) = self.plan.clone() {
@@ -666,8 +639,6 @@ impl Toolbox {
                     .child(div().text_size(px(12.)).text_color(rgb(MUTED)).child("These entries explain dependencies that are kept. Shared packages can still have their optional ad components cleaned individually above."))
                     .child(div().flex().flex_col().gap_3().children(protected_rows));
             }
-        } else {
-            body = body.child(div().p_5().text_size(px(13.)).text_color(rgb(MUTED)).child("Load bloatware to see ✓ cleared, – pending, and × protected or failed entries with reasons. Android will start in the background if needed."));
         }
         let restore = self.button(
             cx,
@@ -691,7 +662,7 @@ impl Toolbox {
         );
         body=body.child(div().mt_6().p_5().rounded_lg().border_1().border_color(rgb(LINE)).flex().flex_col().gap_3()
             .child(div().text_size(px(15.)).font_weight(FontWeight::SEMIBOLD).child("Native core recovery"))
-            .child(div().text_size(px(12.)).text_color(rgb(MUTED)).child("Restore the BlueStacks files backed up before core setup. Close all emulators first. Reinstall the core to use separate windows again after restoring."))
+            .child(div().text_size(px(12.)).text_color(rgb(MUTED)).child("Restore BlueStacks core files from backup. Close Android first."))
             .child(restore));
         div()
             .id("cleanup-scroll")

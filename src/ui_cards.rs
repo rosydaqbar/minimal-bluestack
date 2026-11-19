@@ -97,7 +97,7 @@ impl Toolbox {
                     .text_size(px(12.))
                     .text_color(rgb(MUTED))
                     .child(if ready {
-                        "Game windows can use the installed core."
+                        "Core files verified."
                     } else {
                         "Check the installation and core files."
                     }),
@@ -312,23 +312,11 @@ impl Toolbox {
 }
 impl Render for Toolbox {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let (title, subtitle) = match self.page {
-            Page::Library => (
-                "Apps & games",
-                "Select an app card to open a window or create a shortcut.",
-            ),
-            Page::Installation => (
-                "Installation",
-                "Check folders, emulator version, and core setup.",
-            ),
-            Page::Cleanup => (
-                "Cleanup",
-                "Review optional packages and the result of each change.",
-            ),
-            Page::Activity => (
-                "Activity",
-                "Recent actions and their results. Latest first.",
-            ),
+        let title = match self.page {
+            Page::Library => "Apps & games",
+            Page::Installation => "Installation",
+            Page::Cleanup => "Cleanup",
+            Page::Activity => "Activity",
         };
         let content = match self.page {
             Page::Library => self.library(cx),
@@ -344,11 +332,7 @@ impl Render for Toolbox {
                         .flex_col()
                         .gap_3()
                         .when(self.history.is_empty(), |d| {
-                            d.child(Self::card().child("No actions yet").child(
-                                div().text_size(px(13.)).text_color(rgb(MUTED)).child(
-                                    "Refresh the library or connect Android to see results here.",
-                                ),
-                            ))
+                            d.child(Self::card().child("No actions yet"))
                         })
                         .children(self.history.iter().enumerate().map(|(index, entry)| {
                             Self::card()
@@ -430,14 +414,6 @@ impl Render for Toolbox {
                     .child(self.nav(cx, "Cleanup", 2, Page::Cleanup))
                     .child(self.nav(cx, "Activity", 3, Page::Activity))
                     .child(div().flex_1())
-                    .child(
-                        div()
-                            .px_3()
-                            .pb_3()
-                            .text_size(px(12.))
-                            .text_color(rgb(MUTED))
-                            .child("Rust + GPUI\nLocal installation"),
-                    )
                     .child(self.button(
                         cx,
                         "open-folder",
@@ -462,21 +438,12 @@ impl Render for Toolbox {
                             .items_center()
                             .gap_4()
                             .child(
-                                div()
-                                    .min_w(px(0.))
-                                    .child(
-                                        div()
-                                            .text_size(px(24.))
-                                            .font_weight(FontWeight::SEMIBOLD)
-                                            .child(title),
-                                    )
-                                    .child(
-                                        div()
-                                            .mt_1()
-                                            .text_size(px(12.))
-                                            .text_color(rgb(MUTED))
-                                            .child(subtitle),
-                                    ),
+                                div().min_w(px(0.)).child(
+                                    div()
+                                        .text_size(px(24.))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .child(title),
+                                ),
                             )
                             .child(div().flex().gap_2().child(launcher).child(refresh)),
                     )
