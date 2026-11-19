@@ -209,7 +209,8 @@ preservation and generated bootstrap structure. Live tests additionally need
 the exact supported emulator build.
 
 Project code and original icon artwork are MIT licensed. See THIRD_PARTY.md.
-BlueStacks and game assets belong to their respective owners and are not
-redistributed. The gitignore excludes private state and build output. Inspect
+BlueStacks and game assets belong to their respective owners. Only the app
+screenshot shows installed game icons; standalone game assets are excluded.
+The gitignore excludes private state and build output. Inspect
 staged files before publishing; never upload emulator installations, VM disks,
 accounts or personal runtime directories.

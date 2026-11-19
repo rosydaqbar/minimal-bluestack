@@ -1,8 +1,8 @@
 # Third-party software
 
 This repository contains original integration code. It does not contain
-BlueStacks executables, modified vendor binaries, Android game APKs, game
-artwork, account data, or virtual-machine images.
+BlueStacks executables, modified vendor binaries, Android game APKs,
+account data, or virtual-machine images.
 
 - GPUI: Apache-2.0, https://github.com/zed-industries/zed/tree/main/crates/gpui
 - Rust dependencies: exact versions are recorded in Cargo.lock. Their own
@@ -16,8 +16,9 @@ artwork, account data, or virtual-machine images.
   implementation or PowerShell runtime is required by this application.
 - BlueStacks is independently installed proprietary software. No affiliation
   or endorsement is implied. Users supply their own installation.
-- Game icons are obtained at runtime from the user's installed apps. They
-  belong to their respective owners and are intentionally excluded from Git.
+- Game icons are obtained at runtime from the user's installed apps and belong
+  to their respective owners. Standalone game-icon files are excluded from Git.
+  The app screenshot shows installed app icons as part of the interface.
 
 The native renderer ABI was investigated against one local BlueStacks build.
 The implementation is version gated; it is not a general Android emulator.

@@ -131,7 +131,7 @@ fn main() -> Result<()> {
         root.join("target/release/bluestacks-toolbox.exe"),
         dist.join("MinimalBlueStack.exe"),
     )?;
-    // Explicit allowlist: no vendor files, personal catalogs, logs, account data or game artwork.
+    // Explicit allowlist: no vendor files, personal catalogs, logs or account data.
     for file in [
         "minimal-guest.jar",
         "libminimal_guest.so",
@@ -155,6 +155,7 @@ fn main() -> Result<()> {
         "minimal-bluestack.ico",
         "minimal-bluestack.png",
         "minimal-bluestack.svg",
+        "app-screenshot.png",
     ] {
         fs::copy(
             root.join("assets").join(file),

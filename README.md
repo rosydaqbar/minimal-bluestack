@@ -13,6 +13,8 @@
 
 Pop out Android games into their own desktop windows. Built with **Rust + GPUI** for your existing BlueStacks installation.
 
+![Minimal BlueStack app library](assets/app-screenshot.png)
+
 ## ✨ Features
 
 - Pop out games into separate, movable and resizable desktop windows.
