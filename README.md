@@ -45,9 +45,9 @@ Open **`dist/MinimalBlueStack.exe`**. Keep the entire `dist` folder together in 
 
 ## 🚀 Quick start
 
-1. Check the detected installation and data folders; use **Browse…** for custom paths.
+1. Open **Installation** and check the detected program and data folders. Select folders for custom paths.
 2. Close BlueStacks, then choose **Install core · UAC** to back up and install the bridge.
-3. Choose **Connect Android** to scan installed apps.
+3. Choose **Connect** in the Android session card to scan installed apps.
 4. Select a game → **Open window** or **Create shortcut**.
 5. Choose **Load bloatware** → review the list → **Clean**. Use **Undo** to restore recorded changes.
 

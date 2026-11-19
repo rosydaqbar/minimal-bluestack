@@ -48,14 +48,15 @@ description and embeds the icon. The interface and messages use English.
 ## Use
 
 1. Install the supported BlueStacks build and create the Android 13 instance.
-2. Open the manager and check **BlueStacks installation** and **Android data**.
-   Registry detection supports custom drives. **Browse…** selects the folder
+2. Open **Installation** and check **Program folder** and **Android data folder**.
+   Registry detection supports custom drives. **Program folder…** selects the folder
    containing HD-Player.exe and HD-Adb.exe; **Data folder…** selects the folder
    containing bluestacks.conf. **Auto-detect** resets manual choices.
 3. Close all emulators before changing folders or installing the core.
    **Install core · UAC** verifies supported binaries, backs them up, adds the
    native import, enables local ADB and disables remote ADB.
-4. **Connect Android** boots in the background and scans apps and icons.
+4. **Connect** in the Android session card boots Android in the background and
+   scans apps and icons. **Scan apps** refreshes a running instance.
 5. Select an app, then **Create shortcut** or **Open window**. Each shortcut
    opens only its selected app. Scan again after installing a new game.
 

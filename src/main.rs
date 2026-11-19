@@ -48,6 +48,7 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 focus,
+                window_min_size: Some(size(px(1000.), px(700.))),
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
                     title: Some("Minimal BlueStack".into()),
